@@ -91,3 +91,4 @@ Write-Host "----------------------------------------------------------" -Foregro
 docker volume rm -f $volName | Out-Null
 Remove-Item (Join-Path $backupDir $backupFile) -Force -ErrorAction SilentlyContinue
 Write-Host "`n[SELESAI] Demo Praktikum Pertemuan 1 Sukses 100%!`n" -ForegroundColor Green
+

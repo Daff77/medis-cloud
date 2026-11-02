@@ -3,8 +3,9 @@
 # Kelompok 4 - Sistem Informasi Medis Rumah Sakit
 # ========================================================
 
-$baseDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-Set-Location $baseDir
+if ($PSScriptRoot) {
+    Set-Location $PSScriptRoot
+}
 
 function Show-Header {
     Clear-Host

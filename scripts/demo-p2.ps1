@@ -115,3 +115,4 @@ Write-Host "----------------------------------------------------------" -Foregro
 # Cleanup
 docker rm -f service-pasien service-apotek service-jadwal 2>$null | Out-Null
 Write-Host "`n[SELESAI] Demo Praktikum Pertemuan 2 Sukses 100%!`n" -ForegroundColor Green
+

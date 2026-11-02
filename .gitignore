@@ -17,3 +17,8 @@ env/
 .idea/
 Thumbs.db
 .DS_Store
+
+# Office / Word temp files
+~$*
+~WRL*.tmp
+*.tmp
