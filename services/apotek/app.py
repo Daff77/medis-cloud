@@ -11,10 +11,21 @@ DB_FILE = os.environ.get("DB_FILE", "apotek.db")
 PORT = int(os.environ.get("PORT", 5002))
 PASIEN_SERVICE_URL = os.environ.get("PASIEN_SERVICE_URL", "http://service-pasien:5001")
 
+_db_dir = os.path.dirname(DB_FILE)
+if _db_dir:
+    os.makedirs(_db_dir, exist_ok=True)
+
 def get_db():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_FILE, timeout=15.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
     return conn
+
+@app.after_request
+def add_hostname_header(response):
+    response.headers["X-Served-By"] = socket.gethostname()
+    response.headers["X-Service-Name"] = "service-apotek"
+    return response
 
 def init_db():
     with get_db() as conn:
@@ -87,11 +98,13 @@ def index():
     })
 
 @app.route("/health")
+@app.route("/api/obat/health")
+@app.route("/api/resep/health")
 def health():
     return jsonify({
         "status": "healthy",
         "service": "service-apotek",
-        "database": "SQLite (apotek.db)",
+        "database": f"SQLite ({DB_FILE})",
         "hostname": socket.gethostname(),
         "pasien_service_target": PASIEN_SERVICE_URL
     })

@@ -1,0 +1,137 @@
+version: '3.8'
+
+# ========================================================
+# Docker Compose: Sistem Informasi Medis Rumah Sakit
+# Pertemuan 3: Orkestrasi, Load Balancer Nginx, & Elasticity
+# Kelompok 4 (Yudis, Agra, Qosi, Diaz, Daffa)
+# ========================================================
+
+services:
+  # ------------------------------------------------------
+  # API GATEWAY & LOAD BALANCER (NGINX)
+  # ------------------------------------------------------
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: nginx-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - service-pasien
+      - service-apotek
+      - service-jadwal
+    networks:
+      - frontend-net
+      - backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ------------------------------------------------------
+  # SERVICE 1: DATA PASIEN & REKAM MEDIS (CORE DOMAIN)
+  # Mendukung Horizontal Scaling (docker compose up --scale service-pasien=3)
+  # ------------------------------------------------------
+  service-pasien:
+    build:
+      context: ./services/pasien
+      dockerfile: Dockerfile
+    image: medis-pasien:1.0
+    restart: unless-stopped
+    environment:
+      - PORT=5001
+      - DB_FILE=/data/pasien.db
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - pasien_data:/data
+    networks:
+      - backend-net
+    expose:
+      - "5001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ------------------------------------------------------
+  # SERVICE 2: APOTEK & RESEP FARMASI
+  # ------------------------------------------------------
+  service-apotek:
+    build:
+      context: ./services/apotek
+      dockerfile: Dockerfile
+    image: medis-apotek:1.0
+    restart: unless-stopped
+    environment:
+      - PORT=5002
+      - DB_FILE=/data/apotek.db
+      - PASIEN_SERVICE_URL=http://service-pasien:5001
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - apotek_data:/data
+    networks:
+      - backend-net
+    expose:
+      - "5002"
+    depends_on:
+      - service-pasien
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5002/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ------------------------------------------------------
+  # SERVICE 3: JADWAL DOKTER & POLIKLINIK
+  # ------------------------------------------------------
+  service-jadwal:
+    build:
+      context: ./services/jadwal-dokter
+      dockerfile: Dockerfile
+    image: medis-jadwal:1.0
+    restart: unless-stopped
+    environment:
+      - PORT=5003
+      - DB_FILE=/data/jadwal.db
+      - PASIEN_SERVICE_URL=http://service-pasien:5001
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - jadwal_data:/data
+    networks:
+      - backend-net
+    expose:
+      - "5003"
+    depends_on:
+      - service-pasien
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5003/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+# --------------------------------------------------------
+# ISOLASI JARINGAN (MULTI-TIER NETWORKS)
+# --------------------------------------------------------
+networks:
+  frontend-net:
+    driver: bridge
+    name: medis-frontend-net
+  backend-net:
+    driver: bridge
+    name: medis-backend-net
+
+# --------------------------------------------------------
+# PERSISTENSI DATA REKAM MEDIS (DOCKER NAMED VOLUMES)
+# --------------------------------------------------------
+volumes:
+  pasien_data:
+    name: medis_pasien_data
+  apotek_data:
+    name: medis_apotek_data
+  jadwal_data:
+    name: medis_jadwal_data
+

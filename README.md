@@ -18,7 +18,7 @@ wsl
 #### 2. Pindah ke Folder Proyek di WSL
 Di dalam terminal WSL/Ubuntu, jalankan:
 ```bash
-cd "/mnt/c/DaffaP/KULIAH_DAFFA/Semester_5/CC/Pertemuan 8/medis-cloud"
+cd "/mnt/c/DaffaP/KULIAH_DAFFA/Semester_5/CC/medis-cloud"
 pwd
 ls -la
 ```
@@ -63,7 +63,7 @@ Gunakan langkah manual ini untuk memahami setiap tahapan dan mengambil screensho
 
 1. **Pindah ke folder monolit dan build image**:
    ```bash
-   cd "/mnt/c/DaffaP/KULIAH_DAFFA/Semester_5/CC/Pertemuan 8/medis-cloud/monolit"
+   cd "/mnt/c/DaffaP/KULIAH_DAFFA/Semester_5/CC/medis-cloud/monolit"
    docker build -t medis-monolit:1.0 .
    ```
 2. **Jalankan container monolitik di port 5000**:
@@ -107,7 +107,7 @@ docker network inspect medis-net --format "Subnet: {{range .IPAM.Config}}{{.Subn
 *Tujuan: Membungkus kode masing-masing Bounded Context DDD (Pasien, Apotek, Jadwal).*
 
 ```bash
-BASE="/mnt/c/DaffaP/KULIAH_DAFFA/Semester_5/CC/Pertemuan 8/medis-cloud/services"
+BASE="/mnt/c/DaffaP/KULIAH_DAFFA/Semester_5/CC/medis-cloud/services"
 
 # 1. Build Service Pasien (Port 5001)
 cd "$BASE/pasien"
@@ -237,7 +237,7 @@ docker start service-pasien
 ### D. Pembersihan Kontainer Setelah Selesai
 Untuk menghentikan dan membersihkan semua kontainer serta network praktikum:
 ```bash
-cd "/mnt/c/DaffaP/KULIAH_DAFFA/Semester_5/CC/Pertemuan 8/medis-cloud"
+cd "/mnt/c/DaffaP/KULIAH_DAFFA/Semester_5/CC/medis-cloud"
 ./scripts/stop-all.sh
 ```
 

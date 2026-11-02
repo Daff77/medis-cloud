@@ -7,10 +7,22 @@ app = Flask(__name__)
 DB_FILE = os.environ.get("DB_FILE", "pasien.db")
 PORT = int(os.environ.get("PORT", 5001))
 
+# Pastikan folder penyimpanan database ada (terutama saat menggunakan Docker volume)
+_db_dir = os.path.dirname(DB_FILE)
+if _db_dir:
+    os.makedirs(_db_dir, exist_ok=True)
+
 def get_db():
-    conn = sqlite3.connect(DB_FILE)
+    conn = sqlite3.connect(DB_FILE, timeout=15.0)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL;")
     return conn
+
+@app.after_request
+def add_hostname_header(response):
+    response.headers["X-Served-By"] = socket.gethostname()
+    response.headers["X-Service-Name"] = "service-pasien"
+    return response
 
 def init_db():
     with get_db() as conn:
@@ -52,12 +64,23 @@ def index():
     })
 
 @app.route("/health")
+@app.route("/api/pasien/health")
 def health():
     return jsonify({
         "status": "healthy",
         "service": "service-pasien",
-        "database": "SQLite (pasien.db)",
+        "database": f"SQLite ({DB_FILE})",
         "hostname": socket.gethostname()
+    })
+
+@app.route("/api/pasien/replica-info")
+def replica_info():
+    return jsonify({
+        "service": "service-pasien",
+        "hostname": socket.gethostname(),
+        "status": "active",
+        "database": DB_FILE,
+        "port": PORT
     })
 
 @app.route("/api/pasien", methods=["GET"])
